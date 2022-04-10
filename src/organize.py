@@ -16,6 +16,7 @@ LOG_NAME = "log.txt"
 ERROR_CODE_SUCCESS = 0
 ERROR_CODE_FAIL = 1
 ERROR_CODE_PARAMETERS = 2
+ERROR_CODE_DEPENDENCIES = 3
 
 HEIC = '.heic'
 JPG = '.jpg'
@@ -241,7 +242,7 @@ def directoryEnumerate(directory) -> List[str]:
         a list. '''
 
     # Add all elements of the iterable list (os.walk(<path>), to
-    # files_list (.extend())
+    # files_list (.extend()).
     files_list = []
     path_dirs = []
     for (dir_path, path_dirs, dir_files) in os.walk(directory):
@@ -271,14 +272,23 @@ if __name__ == "__main__":
         datefmt='%H:%M:%S',
         level=LOG.DEBUG)
 
+    # Get script working directory
+    current_path = os.getcwd()
+
+    # Check for exiftool.exe and ConvertTo-Jpeg.ps1 dependencies
+    if (os.path.exists(current_path + EXIFTOOL) is not True):
+        LOG.error(f"Missing {EXIFTOOL}")
+        sys.exit(ERROR_CODE_DEPENDENCIES)
+
+    if (os.path.exists(current_path + HEIC2JPG) is not True):
+        LOG.error(f"Missing {HEIC2JPG}")
+        sys.exit(ERROR_CODE_DEPENDENCIES)
+
     # Configure PowerShell for HEIC conversion
     powershell_command = POWERSHELL_POLICY_BYPASS_CURRENT_USER
     completed = subprocess.run([POWERSHELL, powershell_command],
                                check=True,
                                stdout=subprocess.PIPE)
-
-    # Get script working directory
-    current_path = os.getcwd()
 
     # Get target directories from input parameters, and make results directory
     try:
@@ -315,4 +325,5 @@ if __name__ == "__main__":
 
     hash_text.close()
     LOG.info("Done")
+    input("Press any key to exit...")
     sys.exit(ERROR_CODE_SUCCESS)
